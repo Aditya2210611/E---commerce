@@ -1,0 +1,57 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+require('dotenv').config();
+
+const app = express();
+const port = 5000;
+
+// connect to MongoDB
+mongoose
+  .connect(process.env.DATABASE,{
+      useNewUrlParser: true,
+      //useCreateIndex: true,
+      useUnifiedTopology: true
+   })
+  .then(() => console.log('DB Connected'));
+
+
+// create a schema for candidates
+const candidateSchema = new mongoose.Schema({
+  candidate_name: String,
+  party_name: String,
+  imageURL: String
+}, {
+  image: true,
+  collection: 'candidate'
+}
+);
+
+// create a model for candidates
+const Candidate = mongoose.model('Candidate', candidateSchema);
+
+// use middleware
+app.use(bodyParser.json());
+app.use(cors());
+
+// create a route for adding a candidate
+app.post('/api/addcandidate', async (req, res) => {
+  const { candidate_name, party_name, imageURL } = req.body;
+  try {
+    const candidate = new Candidate({
+      candidate_name,
+      party_name,
+      imageURL
+    });
+    await candidate.save();
+    res.status(201).json({ message: 'Candidate added successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to add candidate' });
+  }
+});
+
+// start the server
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+});
